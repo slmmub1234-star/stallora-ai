@@ -20,7 +20,7 @@ export default function Home() {
   const [notice, setNotice] = useState("");
   const [appUrl, setAppUrl] = useState("");
 
-  useEffect(() => setAppUrl(window.location.origin), []);
+  useEffect(() => setAppUrl(window.location.href.split("#")[0]), []);
 
   const forecast = useMemo(() => {
     const hour = Number(arrival.match(/\d+/)?.[0] || 4);
