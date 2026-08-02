@@ -18,9 +18,9 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [notice, setNotice] = useState("");
-  const [appUrl, setAppUrl] = useState("");
+  const [appUrl, setAppUrl] = useState("");\n  const [loggedIn, setLoggedIn] = useState(false);
 
-  useEffect(() => setAppUrl(window.location.href.split("#")[0]), []);
+  useEffect(() => {\n    setAppUrl(window.location.href.split("#")[0]);\n    setLoggedIn(localStorage.getItem("stallora-demo-user") === "verified");\n  }, []);
 
   const forecast = useMemo(() => {
     const hour = Number(arrival.match(/\d+/)?.[0] || 4);
@@ -53,8 +53,21 @@ export default function Home() {
           <a href="#how">How it works</a>
           <a href="#pilot">Pilot evidence</a>
         </nav>
-        <button className="button ghost" onClick={() => { setModal("login"); setStep(1); }}>Sign in</button>
+        <button className="button ghost" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}>{loggedIn ? "My account" : "Sign in"}</button>
       </header>
+
+      {loggedIn && <section className="accountDashboard shell" id="account">
+        <div className="accountHeading">
+          <div><span className="kicker">MY STALLORA</span><h2>Welcome back.</h2><p>Your demonstration account is verified on this device.</p></div>
+          <button className="button ghost" onClick={() => { localStorage.removeItem("stallora-demo-user"); setLoggedIn(false); }}>Sign out</button>
+        </div>
+        <div className="accountGrid">
+          <article><small>SAVED ARRIVAL</small><strong>{arrival}</strong><span>Parking Structure 2</span><button onClick={() => document.getElementById("forecast")?.scrollIntoView({ behavior: "smooth" })}>Change plan</button></article>
+          <article><small>FORECAST</small><strong>{forecast.spaces} spaces</strong><span>{forecast.level} · {forecast.wait} search</span><button onClick={() => document.getElementById("forecast")?.scrollIntoView({ behavior: "smooth" })}>View forecast</button></article>
+          <article className="settingsCard"><small>ALERT SETTINGS</small><label><input type="checkbox" defaultChecked /> Peak-period warning</label><label><input type="checkbox" defaultChecked /> Arrival reminder</label><label><input type="checkbox" /> Weekly parking summary</label></article>
+        </div>
+        <p className="accountNote">Prototype settings are stored only on this device. No SMS is sent and no personal data is uploaded.</p>
+      </section>}
 
       <section className="hero shell" id="top">
         <div className="heroCopy">
@@ -108,7 +121,7 @@ export default function Home() {
               <span className="decisionIcon">{forecast.cls === "high" ? "!" : "✓"}</span>
               <div><small>Recommendation</small><h3>{forecast.cls === "high" ? "Shift your arrival if possible" : "A reasonable time to arrive"}</h3><p>{forecast.cls === "high" ? "This sits inside the recurring Anthony Wayne Drive peak. Allow extra time or arrive after 5:45 PM." : "Demand is expected to be manageable, with a shorter search time inside Structure 2."}</p></div>
             </div>
-            <button className="button dark" onClick={() => { setModal("login"); setStep(1); }}>Save this plan</button>
+            <button className="button dark" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}>{loggedIn ? "View saved plan" : "Save this plan"}</button>
           </div>
           <div className="chartPanel">
             <div className="chartTitle"><div><small>Predicted occupancy</small><strong>Thursday profile</strong></div><span>Peak window</span></div>
