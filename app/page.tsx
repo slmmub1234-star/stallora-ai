@@ -149,13 +149,13 @@ export default function Home() {
     const question = assistantInput.trim();
     if (!question) return;
     const reply = getStalloraReply(question);
-    setAssistantMessages((messages) => [...messages, { role: "user", text: question }, { role: "assistant", text: reply }].slice(-8));
+    setAssistantMessages((messages) => [...messages, { role: "user" as const, text: question }, { role: "assistant" as const, text: reply }].slice(-8));
     setAssistantInput("");
   }
 
   function askQuick(question: string) {
     const reply = getStalloraReply(question);
-    setAssistantMessages((messages) => [...messages, { role: "user", text: question }, { role: "assistant", text: reply }].slice(-8));
+    setAssistantMessages((messages) => [...messages, { role: "user" as const, text: question }, { role: "assistant" as const, text: reply }].slice(-8));
   }
 
   function submitLogin(event: FormEvent<HTMLFormElement>) {
