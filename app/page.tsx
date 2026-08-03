@@ -18,9 +18,13 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [notice, setNotice] = useState("");
-  const [appUrl, setAppUrl] = useState("");\n  const [loggedIn, setLoggedIn] = useState(false);
+  const [appUrl, setAppUrl] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
 
-  useEffect(() => {\n    setAppUrl(window.location.href.split("#")[0]);\n    setLoggedIn(localStorage.getItem("stallora-demo-user") === "verified");\n  }, []);
+  useEffect(() => {
+    setAppUrl(window.location.href.split("#")[0]);
+    setLoggedIn(localStorage.getItem("stallora-demo-user") === "verified");
+  }, []);
 
   const forecast = useMemo(() => {
     const hour = Number(arrival.match(/\d+/)?.[0] || 4);
