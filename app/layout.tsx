@@ -15,12 +15,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Stallora AI | Predictive Parking Intelligence",
   description: "An interactive graduate academic pilot for predictive parking intelligence at Wayne State University Parking Structure 2.",
+  applicationName: "Stallora AI",
+  manifest: "/stallora-ai/manifest.webmanifest",
+  themeColor: "#102e26",
+  appleWebApp: {
+    capable: true,
+    title: "Stallora",
+    statusBarStyle: "black-translucent",
+  },
   other: {
     "codex-preview": "development",
   },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/stallora-ai/icons/stallora-icon.svg",
+    shortcut: "/stallora-ai/icons/stallora-icon.svg",
+    apple: "/stallora-ai/icons/stallora-icon.svg",
   },
 };
 
