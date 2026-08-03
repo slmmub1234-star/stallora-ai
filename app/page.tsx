@@ -2,6 +2,19 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
+type InstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
+const demoSteps = [
+  { title: "Live forecast", text: "Review expected spaces, search time, and confidence for Structure 2.", target: "top" },
+  { title: "Arrival decision", text: "Change the arrival time to see the recommendation and occupancy profile update.", target: "forecast" },
+  { title: "Compare options", text: "Compare two arrival windows before committing to the trip.", target: "comparison" },
+  { title: "Campus routing", text: "Explore Structure 2, State Hall, and alternative parking locations.", target: "map" },
+  { title: "Pilot evidence", text: "Connect the product workflow to stakeholder evidence and the future data plan.", target: "pilot" },
+];
+
 const parkingOptions = [
   { name: "Structure 2", address: "5150 Lodge Service Drive", lat: 42.3567087, lon: -83.073913, walk: "5 min to State Hall", spaces: 76 },
   { name: "Structure 5", address: "5501 Anthony Wayne Drive", lat: 42.3581386, lon: -83.0741627, walk: "8 min to State Hall", spaces: 142 },
@@ -34,11 +47,26 @@ export default function Home() {
   const [compareTime, setCompareTime] = useState("6:00 PM");
   const [selectedLot, setSelectedLot] = useState("Structure 2");
   const [routeNotice, setRouteNotice] = useState(false);
+  const [showMethod, setShowMethod] = useState(false);
+  const [predictionHistory, setPredictionHistory] = useState<Array<{ time: string; spaces: number; demand: string }>>([]);
+  const [demoActive, setDemoActive] = useState(false);
+  const [demoStep, setDemoStep] = useState(0);
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const [installMessage, setInstallMessage] = useState("");
   const activeLot = parkingOptions.find((lot) => lot.name === selectedLot) || parkingOptions[0];
 
   useEffect(() => {
     setAppUrl(window.location.href.split("#")[0]);
     setLoggedIn(localStorage.getItem("stallora-demo-user") === "verified");
+    const storedHistory = localStorage.getItem("stallora-prediction-history");
+    if (storedHistory) setPredictionHistory(JSON.parse(storedHistory));
+    const captureInstall = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", captureInstall);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => undefined);
+    return () => window.removeEventListener("beforeinstallprompt", captureInstall);
   }, []);
 
   const forecast = useMemo(() => {
@@ -48,6 +76,31 @@ export default function Home() {
       ? { spaces: 76, wait: "8–12 min", level: "High demand", cls: "high" }
       : { spaces: 214, wait: "2–4 min", level: "Moderate", cls: "moderate" };
   }, [arrival]);
+
+  useEffect(() => {
+    if (!demoActive) return;
+    document.getElementById(demoSteps[demoStep].target)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [demoActive, demoStep]);
+
+  function savePrediction() {
+    const entry = { time: arrival, spaces: forecast.spaces, demand: forecast.level };
+    const next = [entry, ...predictionHistory.filter((item) => item.time !== arrival)].slice(0, 4);
+    setPredictionHistory(next);
+    localStorage.setItem("stallora-prediction-history", JSON.stringify(next));
+    setInstallMessage("Prediction saved to My Stallora.");
+    window.setTimeout(() => setInstallMessage(""), 2200);
+  }
+
+  async function installStallora() {
+    if (installPrompt) {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      setInstallMessage(choice.outcome === "accepted" ? "Stallora was added to your device." : "Installation was dismissed.");
+      setInstallPrompt(null);
+    } else {
+      setInstallMessage("On iPhone: tap Share, then Add to Home Screen. On desktop: use the install icon in the address bar.");
+    }
+  }
 
   function askStallora(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,8 +145,10 @@ export default function Home() {
           <a href="#forecast">Forecast</a>
           <a href="#how">How it works</a>
           <a href="#pilot">Pilot evidence</a>
+          <a href="./admin/">Admin</a>
         </nav>
         <div className="navActions">
+          <button className="demoNavButton" onClick={() => { setDemoStep(0); setDemoActive(true); }}>Professor Demo</button>
           <button className="notificationButton" aria-label="Notifications" onClick={() => setNotificationsOpen(!notificationsOpen)}>♢<span>2</span></button>
           <button className="button ghost" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}>{loggedIn ? "My account" : "Sign in"}</button>
           {notificationsOpen && <div className="notificationPanel">
@@ -114,6 +169,10 @@ export default function Home() {
           <article><small>SAVED ARRIVAL</small><strong>{arrival}</strong><span>Parking Structure 2</span><button onClick={() => document.getElementById("forecast")?.scrollIntoView({ behavior: "smooth" })}>Change plan</button></article>
           <article><small>FORECAST</small><strong>{forecast.spaces} spaces</strong><span>{forecast.level} · {forecast.wait} search</span><button onClick={() => document.getElementById("forecast")?.scrollIntoView({ behavior: "smooth" })}>View forecast</button></article>
           <article className="settingsCard"><small>ALERT SETTINGS</small><label><input type="checkbox" defaultChecked /> Peak-period warning</label><label><input type="checkbox" defaultChecked /> Arrival reminder</label><label><input type="checkbox" /> Weekly parking summary</label></article>
+        </div>
+        <div className="historyPanel">
+          <div className="historyHeading"><div><small>PREDICTION HISTORY</small><strong>Recent parking checks</strong></div><button onClick={() => { setPredictionHistory([]); localStorage.removeItem("stallora-prediction-history"); }}>Clear</button></div>
+          {predictionHistory.length ? <div className="historyRows">{predictionHistory.map((item, index) => <div key={`${item.time}-${index}`}><span>{item.time}</span><strong>{item.spaces} spaces</strong><small>{item.demand}</small></div>)}</div> : <p className="emptyHistory">No saved predictions yet. Use “Save prediction” in the arrival planner.</p>}
         </div>
         <p className="accountNote">Prototype settings are stored only on this device. No SMS is sent and no personal data is uploaded.</p>
       </section>}
@@ -142,6 +201,7 @@ export default function Home() {
             <div><small>Forecast confidence</small><strong>86%</strong></div>
           </div>
           <div className="recommend"><span>✓</span><p><strong>Best choice</strong><br />Arrive before 2:45 PM or after 5:45 PM.</p></div>
+          <button className="methodButton" onClick={() => setShowMethod(true)}>How was this prediction made? <span>→</span></button>
         </div>
       </section>
 
@@ -176,7 +236,7 @@ export default function Home() {
               <span className="decisionIcon">{forecast.cls === "high" ? "!" : "✓"}</span>
               <div><small>Recommendation</small><h3>{forecast.cls === "high" ? "Shift your arrival if possible" : "A reasonable time to arrive"}</h3><p>{forecast.cls === "high" ? "This sits inside the recurring Anthony Wayne Drive peak. Allow extra time or arrive after 5:45 PM." : "Demand is expected to be manageable, with a shorter search time inside Structure 2."}</p></div>
             </div>
-            <button className="button dark" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}>{loggedIn ? "View saved plan" : "Save this plan"}</button>
+            <button className="button dark" onClick={() => { savePrediction(); if (!loggedIn) { setModal("login"); setStep(1); } }}>{loggedIn ? "Save prediction" : "Sign in & save prediction"}</button>
           </div>
           <div className="chartPanel">
             <div className="chartTitle"><div><small>Predicted occupancy</small><strong>Thursday profile</strong></div><span>Peak window</span></div>
@@ -188,7 +248,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="comparison shell">
+      <section className="comparison shell" id="comparison">
         <div className="comparisonHead"><div><span className="kicker">DECISION COMPARISON</span><h2>See the difference<br />before you leave.</h2></div>
           <label>Compare with<select value={compareTime} onChange={(e) => setCompareTime(e.target.value)}><option>2:30 PM</option><option>6:00 PM</option></select></label>
         </div>
@@ -249,10 +309,27 @@ export default function Home() {
       </section>
 
       <section className="cta">
-        <div className="shell ctaInner"><div><span>TAKE IT WITH YOU</span><h2>Scan before you park.</h2><p>Open the mobile experience and add Stallora to your home screen.</p></div><button className="button light" onClick={() => setModal("qr")}>Open QR poster <span>↗</span></button></div>
+        <div className="shell ctaInner"><div><span>TAKE IT WITH YOU</span><h2>Install Stallora.</h2><p>Use it like an app before every campus trip.</p>{installMessage && <small className="installMessage">{installMessage}</small>}</div><div className="ctaButtons"><button className="button light" onClick={installStallora}>Add to Home Screen <span>↓</span></button><button className="button outlineLight" onClick={() => setModal("qr")}>Open QR poster <span>↗</span></button></div></div>
       </section>
 
       <footer className="shell"><div className="brand"><span className="logoMark"><span>S</span></span><span><strong>Stallora</strong><small>AI</small></span></div><p>Graduate academic pilot for campus parking prediction.</p><p>© 2026 Stallora AI</p></footer>
+
+      {showMethod && <div className="overlay methodOverlay" role="dialog" aria-modal="true" aria-label="Prediction methodology" onMouseDown={() => setShowMethod(false)}>
+        <section className="methodModal" onMouseDown={(e) => e.stopPropagation()}>
+          <button className="close" onClick={() => setShowMethod(false)} aria-label="Close">×</button>
+          <span className="kicker">FORECAST TRANSPARENCY</span><h2>How this prediction was made</h2><p>Stallora converts a focused set of parking signals into an understandable arrival recommendation.</p>
+          <div className="methodFlow"><article><span>01</span><strong>Historical pattern</strong><small>Recurring Monday–Thursday demand, especially 3:00–5:30 PM.</small></article><article><span>02</span><strong>Occupancy scenario</strong><small>Synthetic Structure 2 availability profiles for the academic pilot.</small></article><article><span>03</span><strong>Traffic context</strong><small>Anthony Wayne Drive congestion and estimated parking search time.</small></article><article><span>04</span><strong>Decision rule</strong><small>Recommend a lower-demand arrival window when forecast occupancy exceeds the pilot threshold.</small></article></div>
+          <div className="confidenceExplain"><div><span>86%</span><small>DEMONSTRATION CONFIDENCE</small></div><p>This score communicates model certainty within the prototype scenario. It is not a validated operational accuracy rate. A production model would be calibrated with PARCS counts, entry/exit flow, events, weather, and observed outcomes.</p></div>
+        </section>
+      </div>}
+
+      {demoActive && <div className="demoTour" role="dialog" aria-live="polite">
+        <div className="demoProgress">{demoSteps.map((_, index) => <span key={index} className={index <= demoStep ? "active" : ""}></span>)}</div>
+        <small>PROFESSOR DEMO · {demoStep + 1} OF {demoSteps.length}</small><h3>{demoSteps[demoStep].title}</h3><p>{demoSteps[demoStep].text}</p>
+        <div><button onClick={() => setDemoActive(false)}>Exit tour</button><button className="button primary" onClick={() => { if (demoStep === demoSteps.length - 1) setDemoActive(false); else setDemoStep(demoStep + 1); }}>{demoStep === demoSteps.length - 1 ? "Finish" : "Next"} <span>→</span></button></div>
+      </div>}
+
+      {installMessage && <div className="installToast">{installMessage}</div>}
 
       <div className="assistantDock">
         {assistantOpen && <section className="assistantPanel" aria-label="Stallora AI assistant">
