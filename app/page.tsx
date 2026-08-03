@@ -36,8 +36,14 @@ export default function Home() {
       setStep(2);
       setNotice(`A verification code was prepared for ${email}.`);
     } else {
+      localStorage.setItem("stallora-demo-user", "verified");
+      setLoggedIn(true);
       setStep(3);
-      setNotice("Demo account verified. Your parking plan is ready.");
+      setNotice("Demo account verified. Opening your dashboard…");
+      window.setTimeout(() => {
+        setModal(null);
+        window.setTimeout(() => document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }), 50);
+      }, 450);
     }
   }
 
