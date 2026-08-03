@@ -20,6 +20,12 @@ export default function Home() {
   const [notice, setNotice] = useState("");
   const [appUrl, setAppUrl] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [smartAlertVisible, setSmartAlertVisible] = useState(true);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantReply, setAssistantReply] = useState("Ask about availability, arrival time, or the weekday peak.");
+  const [compareTime, setCompareTime] = useState("6:00 PM");
 
   useEffect(() => {
     setAppUrl(window.location.href.split("#")[0]);
@@ -33,6 +39,21 @@ export default function Home() {
       ? { spaces: 76, wait: "8–12 min", level: "High demand", cls: "high" }
       : { spaces: 214, wait: "2–4 min", level: "Moderate", cls: "moderate" };
   }, [arrival]);
+
+  function askStallora(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const question = assistantInput.toLowerCase();
+    let reply = `At ${arrival}, Structure 2 is forecast to have ${forecast.spaces} spaces, with a ${forecast.wait} search time.`;
+    if (question.includes("best") || question.includes("when") || question.includes("وقت")) {
+      reply = "The best demonstrated arrival window is before 2:45 PM or after 5:45 PM.";
+    } else if (question.includes("another") || question.includes("alternative")) {
+      reply = "For this focused pilot, I recommend shifting your arrival to 6:00 PM. A future campus rollout would compare nearby structures live.";
+    } else if (question.includes("data") || question.includes("accurate") || question.includes("confidence")) {
+      reply = "This academic pilot uses scenario-based data with an 86% demonstration confidence score. Production deployment would connect to PARCS and live occupancy feeds.";
+    }
+    setAssistantReply(reply);
+    setAssistantInput("");
+  }
 
   function submitLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,7 +84,16 @@ export default function Home() {
           <a href="#how">How it works</a>
           <a href="#pilot">Pilot evidence</a>
         </nav>
-        <button className="button ghost" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}>{loggedIn ? "My account" : "Sign in"}</button>
+        <div className="navActions">
+          <button className="notificationButton" aria-label="Notifications" onClick={() => setNotificationsOpen(!notificationsOpen)}>♢<span>2</span></button>
+          <button className="button ghost" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}>{loggedIn ? "My account" : "Sign in"}</button>
+          {notificationsOpen && <div className="notificationPanel">
+            <div><strong>Notifications</strong><button onClick={() => setNotificationsOpen(false)}>×</button></div>
+            <article><span className="noticeDot high"></span><p><b>Peak-period warning</b><small>High demand is expected from 3:00–5:30 PM.</small></p></article>
+            <article><span className="noticeDot good"></span><p><b>Better arrival window</b><small>Arriving at 6:00 PM may shorten your search.</small></p></article>
+            <small>Demonstration notifications · Updated just now</small>
+          </div>}
+        </div>
       </header>
 
       {loggedIn && <section className="accountDashboard shell" id="account">
@@ -106,6 +136,12 @@ export default function Home() {
         </div>
       </section>
 
+      {smartAlertVisible && forecast.cls === "high" && <section className="smartAlert shell">
+        <div className="smartAlertIcon">!</div>
+        <div><span>STALLORA SMART ALERT</span><h3>A better arrival window is available.</h3><p>Switching from {arrival} to 6:00 PM may reduce your estimated search from {forecast.wait} to 2–4 min.</p></div>
+        <div className="smartAlertActions"><button className="button dark" onClick={() => { setArrival("6:00 PM"); setSmartAlertVisible(false); }}>Switch to 6:00 PM</button><button onClick={() => setSmartAlertVisible(false)}>Keep my time</button></div>
+      </section>}
+
       <section className="trustBar">
         <div className="shell trustGrid">
           <div><strong>Mon–Thu</strong><span>Recurring pattern</span></div>
@@ -143,6 +179,20 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="comparison shell">
+        <div className="comparisonHead"><div><span className="kicker">DECISION COMPARISON</span><h2>See the difference<br />before you leave.</h2></div>
+          <label>Compare with<select value={compareTime} onChange={(e) => setCompareTime(e.target.value)}><option>2:30 PM</option><option>6:00 PM</option></select></label>
+        </div>
+        <div className="comparisonTable">
+          <div className="compareRow compareHeader"><span>Measure</span><strong>{arrival}</strong><strong>{compareTime}</strong></div>
+          <div className="compareRow"><span>Expected spaces</span><strong>{forecast.spaces}</strong><strong>{compareTime === "6:00 PM" ? 214 : 168}</strong></div>
+          <div className="compareRow"><span>Search time</span><strong>{forecast.wait}</strong><strong>{compareTime === "6:00 PM" ? "2–4 min" : "4–6 min"}</strong></div>
+          <div className="compareRow"><span>Demand</span><strong className={forecast.cls}>{forecast.level}</strong><strong className="moderate">Moderate</strong></div>
+          <div className="compareRow recommendationRow"><span>Stallora recommendation</span><strong>{forecast.cls === "high" ? "Shift if possible" : "Reasonable"}</strong><strong>Recommended</strong></div>
+        </div>
+        <p className="dataDisclosure">Scenario comparison uses synthetic pilot data. Live deployment would refresh from operational parking feeds.</p>
+      </section>
+
       <section className="darkSection" id="how">
         <div className="shell">
           <div className="sectionHead inverted"><div><span className="kicker">THE PRODUCT</span><h2>Useful information.<br />No guesswork.</h2></div><p>The prototype combines an understandable student workflow with the data plan Parking Services would need for a future operational trial.</p></div>
@@ -164,6 +214,18 @@ export default function Home() {
       </section>
 
       <footer className="shell"><div className="brand"><span className="logoMark"><span>S</span></span><span><strong>Stallora</strong><small>AI</small></span></div><p>Graduate academic pilot for campus parking prediction.</p><p>© 2026 Stallora AI</p></footer>
+
+      <div className="assistantDock">
+        {assistantOpen && <section className="assistantPanel" aria-label="Stallora AI assistant">
+          <div className="assistantHead"><div><span className="assistantOrb">S</span><p><strong>Stallora Agent</strong><small>Parking decision assistant</small></p></div><button onClick={() => setAssistantOpen(false)}>×</button></div>
+          <div className="assistantStatus"><i></i> PILOT AGENT ONLINE</div>
+          <div className="agentMessage">{assistantReply}</div>
+          <div className="quickPrompts"><button onClick={() => setAssistantReply("The best demonstrated arrival window is before 2:45 PM or after 5:45 PM.")}>Best arrival time</button><button onClick={() => setAssistantReply(`At ${arrival}, Structure 2 is forecast to have ${forecast.spaces} spaces with an estimated ${forecast.wait} search.`)}>Check my arrival</button></div>
+          <form onSubmit={askStallora}><input aria-label="Ask Stallora" value={assistantInput} onChange={(e) => setAssistantInput(e.target.value)} placeholder="Ask about Structure 2…" required /><button type="submit">→</button></form>
+          <small className="agentDisclosure">AI-style demonstration using pilot forecast rules.</small>
+        </section>}
+        <button className="assistantLauncher" onClick={() => setAssistantOpen(!assistantOpen)}><span>S</span><p><strong>Ask Stallora</strong><small>AI parking assistant</small></p></button>
+      </div>
 
       {modal && <div className="overlay" role="dialog" aria-modal="true" aria-label={modal === "login" ? "Sign in" : "QR poster"} onMouseDown={() => setModal(null)}>
         <div className={`modal ${modal === "qr" ? "posterModal" : ""}`} onMouseDown={(e) => e.stopPropagation()}>
