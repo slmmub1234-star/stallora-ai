@@ -1,0 +1,18 @@
+{
+  "name": "Stallora AI Parking Intelligence",
+  "short_name": "Stallora",
+  "description": "Predictive parking intelligence for the Wayne State University academic pilot.",
+  "start_url": "/stallora-ai/",
+  "scope": "/stallora-ai/",
+  "display": "standalone",
+  "background_color": "#f7f5ef",
+  "theme_color": "#102e26",
+  "icons": [
+    {
+      "src": "/stallora-ai/icons/stallora-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
