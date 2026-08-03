@@ -43,7 +43,9 @@ export default function Home() {
   const [smartAlertVisible, setSmartAlertVisible] = useState(true);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantInput, setAssistantInput] = useState("");
-  const [assistantReply, setAssistantReply] = useState("Ask about availability, arrival time, or the weekday peak.");
+  const [assistantMessages, setAssistantMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
+    { role: "assistant", text: "Hi. I can help you choose an arrival time, check predicted spaces, compare structures, or open directions." },
+  ]);
   const [compareTime, setCompareTime] = useState("6:00 PM");
   const [selectedLot, setSelectedLot] = useState("Structure 2");
   const [routeNotice, setRouteNotice] = useState(false);
@@ -102,19 +104,58 @@ export default function Home() {
     }
   }
 
+  function getStalloraReply(rawQuestion: string) {
+    const question = rawQuestion.toLowerCase().trim();
+    const timeMatch = question.match(/(1|2|3|4|5|6)(?::([0-5][0-9]))?\s*(am|pm)?/);
+    const requestedHour = timeMatch ? Number(timeMatch[1]) : null;
+    const requestedPeak = requestedHour !== null && requestedHour >= 3 && requestedHour <= 5;
+    const requestedTime = timeMatch ? `${timeMatch[1]}:${timeMatch[2] || "00"} ${(timeMatch[3] || "PM").toUpperCase()}` : arrival;
+
+    if (/^(hi|hello|hey|good morning|good afternoon)/.test(question)) {
+      return "Hello. Tell me when you expect to arrive, or ask me to compare parking options near State Hall.";
+    }
+    if (question.includes("best") || question.includes("when should") || question.includes("recommended time")) {
+      return "Your best arrival window is before 2:45 PM or after 5:45 PM. At 6:00 PM, the forecast improves to 214 spaces and a 2–4 minute search.";
+    }
+    if (question.includes("how many") || question.includes("spaces") || question.includes("available") || question.includes("occupancy")) {
+      if (requestedHour !== null) return requestedPeak
+        ? `At ${requestedTime}, Structure 2 is forecast to have about 76 spaces. Demand is high and the expected search is 8–12 minutes.`
+        : `At ${requestedTime}, Structure 2 is forecast to have about 214 spaces. Demand is moderate and the expected search is 2–4 minutes.`;
+      return `For your selected arrival at ${arrival}, Structure 2 is forecast to have ${forecast.spaces} spaces with a ${forecast.wait} search.`;
+    }
+    if (question.includes("another") || question.includes("alternative") || question.includes("other structure")) {
+      return "Structure 5 is the closest displayed alternative, at 5501 Anthony Wayne Drive. It has 142 predicted spaces and is approximately an 8-minute walk to State Hall.";
+    }
+    if (question.includes("direction") || question.includes("coordinate") || question.includes("route") || question.includes("address")) {
+      return `${activeLot.name} is at ${activeLot.address}, Detroit, MI 48202. Coordinates: ${activeLot.lat.toFixed(6)}, ${activeLot.lon.toFixed(6)}. Use the Live Campus Map section to open turn-by-turn directions.`;
+    }
+    if (question.includes("state hall") || question.includes("walk") || question.includes("distance")) {
+      return `${activeLot.name} is ${activeLot.walk}. State Hall is located at 5143 Cass Avenue.`;
+    }
+    if (question.includes("confidence") || question.includes("accurate") || question.includes("prediction made") || question.includes("data")) {
+      return "Forecast confidence is shown as 86% for the academic scenario. The current forecast combines weekday demand patterns, synthetic occupancy profiles, traffic context, and decision rules. Select “How was this prediction made?” for full details.";
+    }
+    if (question.includes("install") || question.includes("home screen") || question.includes("app")) {
+      return "Use the Add to Home Screen button near the bottom. On iPhone, tap Share and then Add to Home Screen.";
+    }
+    if (question.includes("login") || question.includes("sign in") || question.includes("code")) {
+      return "Open User Portal, enter an email and a 10-digit phone number, then use verification code 246810 for this prototype.";
+    }
+    return `For ${arrival}, I recommend ${forecast.cls === "high" ? "shifting your arrival to 6:00 PM if possible" : "keeping your selected arrival"}. Ask me about spaces, the best time, another structure, State Hall, directions, or forecast confidence.`;
+  }
+
   function askStallora(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const question = assistantInput.toLowerCase();
-    let reply = `At ${arrival}, Structure 2 is forecast to have ${forecast.spaces} spaces, with a ${forecast.wait} search time.`;
-    if (question.includes("best") || question.includes("when")) {
-      reply = "The best demonstrated arrival window is before 2:45 PM or after 5:45 PM.";
-    } else if (question.includes("another") || question.includes("alternative")) {
-      reply = "For this focused pilot, I recommend shifting your arrival to 6:00 PM. A future campus rollout would compare nearby structures live.";
-    } else if (question.includes("data") || question.includes("accurate") || question.includes("confidence")) {
-      reply = "This academic pilot uses scenario-based data with an 86% demonstration confidence score. Production deployment would connect to PARCS and live occupancy feeds.";
-    }
-    setAssistantReply(reply);
+    const question = assistantInput.trim();
+    if (!question) return;
+    const reply = getStalloraReply(question);
+    setAssistantMessages((messages) => [...messages, { role: "user", text: question }, { role: "assistant", text: reply }].slice(-8));
     setAssistantInput("");
+  }
+
+  function askQuick(question: string) {
+    const reply = getStalloraReply(question);
+    setAssistantMessages((messages) => [...messages, { role: "user", text: question }, { role: "assistant", text: reply }].slice(-8));
   }
 
   function submitLogin(event: FormEvent<HTMLFormElement>) {
@@ -148,7 +189,7 @@ export default function Home() {
           <a href="./admin">Admin</a>
         </nav>
         <div className="navActions">
-          <button className="demoNavButton" onClick={() => { setDemoStep(0); setDemoActive(true); }}>Professor Demo</button>
+          <button className="userPortalButton" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}><span className="userPortalIcon">●</span>{loggedIn ? "User Dashboard" : "User Portal"}</button>
           <button className="notificationButton" aria-label="Notifications" onClick={() => setNotificationsOpen(!notificationsOpen)}>♢<span>2</span></button>
           <button className="button ghost" onClick={() => { if (loggedIn) document.getElementById("account")?.scrollIntoView({ behavior: "smooth" }); else { setModal("login"); setStep(1); } }}>{loggedIn ? "My account" : "Sign in"}</button>
           {notificationsOpen && <div className="notificationPanel">
@@ -333,12 +374,12 @@ export default function Home() {
 
       <div className="assistantDock">
         {assistantOpen && <section className="assistantPanel" aria-label="Stallora AI assistant">
-          <div className="assistantHead"><div><span className="assistantOrb">S</span><p><strong>Stallora Agent</strong><small>Parking decision assistant</small></p></div><button onClick={() => setAssistantOpen(false)}>×</button></div>
-          <div className="assistantStatus"><i></i> PILOT AGENT ONLINE</div>
-          <div className="agentMessage">{assistantReply}</div>
-          <div className="quickPrompts"><button onClick={() => setAssistantReply("The best demonstrated arrival window is before 2:45 PM or after 5:45 PM.")}>Best arrival time</button><button onClick={() => setAssistantReply(`At ${arrival}, Structure 2 is forecast to have ${forecast.spaces} spaces with an estimated ${forecast.wait} search.`)}>Check my arrival</button></div>
-          <form onSubmit={askStallora}><input aria-label="Ask Stallora" value={assistantInput} onChange={(e) => setAssistantInput(e.target.value)} placeholder="Ask about Structure 2…" required /><button type="submit">→</button></form>
-          <small className="agentDisclosure">AI-style demonstration using pilot forecast rules.</small>
+          <div className="assistantHead"><div><span className="assistantOrb">S</span><p><strong>Stallora Assistant</strong><small>Parking intelligence</small></p></div><button onClick={() => setAssistantOpen(false)}>×</button></div>
+          <div className="assistantStatus"><i></i> CONNECTED TO CURRENT FORECAST</div>
+          <div className="assistantConversation">{assistantMessages.map((message, index) => <div key={index} className={message.role === "user" ? "chatMessage user" : "chatMessage assistant"}>{message.text}</div>)}</div>
+          <div className="quickPrompts"><button onClick={() => askQuick("What is the best arrival time?")}>Best arrival time</button><button onClick={() => askQuick("How many spaces are available?")}>Check spaces</button><button onClick={() => askQuick("Suggest another structure")}>Alternative</button></div>
+          <form onSubmit={askStallora}><input aria-label="Ask Stallora" value={assistantInput} onChange={(e) => setAssistantInput(e.target.value)} placeholder="Ask a parking question…" required /><button type="submit" aria-label="Send question">→</button></form>
+          <small className="agentDisclosure">Answers use the current Stallora forecast and campus routing data.</small>
         </section>}
         <button className="assistantLauncher" onClick={() => setAssistantOpen(!assistantOpen)}><span>S</span><p><strong>Ask Stallora</strong><small>AI parking assistant</small></p></button>
       </div>
