@@ -2,6 +2,12 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
+const parkingOptions = [
+  { name: "Structure 2", address: "5150 Lodge Service Drive", lat: 42.3567087, lon: -83.073913, walk: "5 min to State Hall", spaces: 76 },
+  { name: "Structure 5", address: "5501 Anthony Wayne Drive", lat: 42.3581386, lon: -83.0741627, walk: "8 min to State Hall", spaces: 142 },
+  { name: "Structure 1", address: "450 W. Palmer Avenue", lat: 42.3610227, lon: -83.0715633, walk: "12 min to State Hall", spaces: 188 },
+];
+
 const hours = [
   { time: "12 PM", value: 46 },
   { time: "1 PM", value: 58 },
@@ -26,6 +32,9 @@ export default function Home() {
   const [assistantInput, setAssistantInput] = useState("");
   const [assistantReply, setAssistantReply] = useState("Ask about availability, arrival time, or the weekday peak.");
   const [compareTime, setCompareTime] = useState("6:00 PM");
+  const [selectedLot, setSelectedLot] = useState("Structure 2");
+  const [routeNotice, setRouteNotice] = useState(false);
+  const activeLot = parkingOptions.find((lot) => lot.name === selectedLot) || parkingOptions[0];
 
   useEffect(() => {
     setAppUrl(window.location.href.split("#")[0]);
@@ -192,6 +201,36 @@ export default function Home() {
         </div>
         <p className="dataDisclosure">Scenario comparison uses synthetic pilot data. Live deployment would refresh from operational parking feeds.</p>
       </section>
+
+      <section className="mapSection shell" id="map">
+        <div className="mapHeader">
+          <div><span className="kicker">LIVE CAMPUS MAP</span><h2>Know where to go,<br />not only when.</h2><p>Explore the pilot structure, its relationship to State Hall, and practical alternatives when demand is high.</p></div>
+          <div className="mapLegend"><span><i className="pilotPin"></i>Pilot location</span><span><i className="hallPin"></i>State Hall</span><small>Map tiles and directions are live. Availability values are pilot forecasts.</small></div>
+        </div>
+        <div className="mapLayout">
+          <div className="liveMap">
+            <iframe title={`Live map of ${activeLot.name}`} loading="lazy" src={`https://www.openstreetmap.org/export/embed.html?bbox=${activeLot.lon - 0.008}%2C${activeLot.lat - 0.005}%2C${activeLot.lon + 0.008}%2C${activeLot.lat + 0.005}&layer=mapnik&marker=${activeLot.lat}%2C${activeLot.lon}`}></iframe>
+            <div className="mapBadge"><span>LIVE MAP</span><strong>{activeLot.name}</strong><small>{activeLot.address}</small></div>
+            <a className="stateHallBadge" href="https://www.openstreetmap.org/?mlat=42.3571327&mlon=-83.0688319#map=18/42.3571327/-83.0688319" target="_blank" rel="noreferrer"><span>STATE HALL</span><strong>42.35713, −83.06883</strong></a>
+          </div>
+          <aside className="lotSelector">
+            <div className="lotSelectorTop"><span>RECOMMENDED OPTIONS</span><a href="https://parking.wayne.edu/availability" target="_blank" rel="noreferrer">WSU live availability ↗</a></div>
+            {parkingOptions.map((lot, index) => <button key={lot.name} className={selectedLot === lot.name ? "lotOption active" : "lotOption"} onClick={() => { setSelectedLot(lot.name); setRouteNotice(false); }}>
+              <span className="lotRank">{index + 1}</span><span><strong>{lot.name}</strong><small>{lot.address}</small><small>{lot.walk}</small></span><span className="lotSpaces"><b>{lot.spaces}</b><small>predicted</small></span>
+            </button>)}
+            <button className="button dark routeButton" onClick={() => setRouteNotice(true)}>Route me to {activeLot.name} <span>→</span></button>
+            <small className="mapSource">Location references: Wayne State Campus Map and Parking & Transportation Services. Coordinates power the demonstration routing.</small>
+          </aside>
+        </div>
+      </section>
+
+      {routeNotice && <div className="routeToast" role="status">
+        <button className="routeClose" onClick={() => setRouteNotice(false)}>×</button>
+        <span className="routeIcon">↗</span>
+        <div><small>STALLORA ROUTE READY</small><h3>{activeLot.name}</h3><p>{activeLot.address}, Detroit, MI 48202</p><dl><div><dt>Coordinates</dt><dd>{activeLot.lat.toFixed(6)}, {activeLot.lon.toFixed(6)}</dd></div><div><dt>Walking estimate</dt><dd>{activeLot.walk}</dd></div></dl>
+          <a href={`https://www.google.com/maps/dir/?api=1&destination=${activeLot.lat},${activeLot.lon}`} target="_blank" rel="noreferrer">Open turn-by-turn directions →</a>
+        </div>
+      </div>}
 
       <section className="darkSection" id="how">
         <div className="shell">
