@@ -21,8 +21,8 @@ export default function AdminDashboard() {
 
   return <main className="adminPage">
     <header className="adminTopbar">
-      <a className="brand" href="../"><span className="logoMark"><span>S</span></span><span><strong>Stallora</strong><small>AI</small></span></a>
-      <div><span className="adminMode">ADMIN DEMO</span><a className="button ghost" href="../">Return to commuter view</a></div>
+      <a className="brand" href="/stallora-ai/"><span className="logoMark"><span>S</span></span><span><strong>Stallora</strong><small>AI</small></span></a>
+      <div><span className="adminMode">ADMIN DEMO</span><a className="button ghost" href="/stallora-ai/">Return to commuter view</a></div>
     </header>
     <div className="adminShell">
       <aside className="adminSidebar"><span>OPERATIONS</span><button className="active">Overview</button><button>Structures</button><button>Forecasts</button><button>Alerts</button><button>Data quality</button><small>Academic administration prototype<br />Wayne State University context</small></aside>
