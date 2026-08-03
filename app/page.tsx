@@ -53,7 +53,7 @@ export default function Home() {
     event.preventDefault();
     const question = assistantInput.toLowerCase();
     let reply = `At ${arrival}, Structure 2 is forecast to have ${forecast.spaces} spaces, with a ${forecast.wait} search time.`;
-    if (question.includes("best") || question.includes("when") || question.includes("وقت")) {
+    if (question.includes("best") || question.includes("when")) {
       reply = "The best demonstrated arrival window is before 2:45 PM or after 5:45 PM.";
     } else if (question.includes("another") || question.includes("alternative")) {
       reply = "For this focused pilot, I recommend shifting your arrival to 6:00 PM. A future campus rollout would compare nearby structures live.";
