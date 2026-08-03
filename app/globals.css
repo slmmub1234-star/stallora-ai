@@ -185,3 +185,70 @@ footer { min-height:120px; display:flex; align-items:center; justify-content:spa
   .assistantLauncher p { display:none; }
   .assistantLauncher { padding:7px; }
 }
+
+
+/* Live campus map and routing */
+.mapSection { padding-top: 100px; padding-bottom: 110px; }
+.mapHeader { display:grid; grid-template-columns:1.3fr .7fr; gap:60px; align-items:end; margin-bottom:34px; }
+.mapHeader h2 { font-family:var(--font-serif),Georgia,serif; font-size:clamp(38px,5vw,66px); line-height:.98; font-weight:500; margin:10px 0 18px; }
+.mapHeader p { max-width:650px; color:var(--muted); line-height:1.65; }
+.mapLegend { border-left:1px solid var(--line); padding-left:28px; display:grid; gap:12px; color:var(--ink); }
+.mapLegend > span { display:flex; align-items:center; gap:9px; font-size:13px; font-weight:700; }
+.mapLegend i { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.pilotPin { background:var(--orange); box-shadow:0 0 0 4px rgba(211,139,56,.16); }
+.hallPin { background:var(--green); box-shadow:0 0 0 4px rgba(33,105,80,.14); }
+.mapLegend small { color:var(--muted); line-height:1.45; margin-top:4px; }
+.mapLayout { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(320px,.65fr); border:1px solid var(--line); border-radius:24px; overflow:hidden; background:#fff; box-shadow:0 24px 80px rgba(10,35,28,.11); }
+.liveMap { min-height:570px; position:relative; background:#e9eee9; }
+.liveMap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; filter:saturate(.8) contrast(.96); }
+.mapBadge { position:absolute; left:18px; top:18px; z-index:2; display:grid; gap:3px; background:rgba(255,255,255,.95); backdrop-filter:blur(12px); padding:14px 16px; border-radius:14px; box-shadow:0 12px 36px rgba(15,40,32,.17); }
+.mapBadge span,.stateHallBadge span { color:var(--orange); font-size:9px; letter-spacing:.13em; font-weight:900; }
+.mapBadge strong { font-size:17px; }
+.mapBadge small { color:var(--muted); }
+.stateHallBadge { position:absolute; right:18px; bottom:18px; z-index:2; display:grid; gap:4px; padding:12px 14px; background:#11342b; color:#fff; border-radius:12px; text-decoration:none; box-shadow:0 12px 34px rgba(10,30,25,.22); }
+.stateHallBadge span { color:#c6e2d8; }
+.stateHallBadge strong { font-size:11px; }
+.lotSelector { padding:22px; background:#fbfcfa; }
+.lotSelectorTop { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.lotSelectorTop > span { font-size:10px; letter-spacing:.12em; font-weight:900; color:var(--muted); }
+.lotSelectorTop a { font-size:10px; color:var(--green); font-weight:800; }
+.lotOption { width:100%; border:1px solid var(--line); background:#fff; border-radius:15px; padding:15px 12px; margin-bottom:10px; display:grid; grid-template-columns:auto 1fr auto; gap:11px; align-items:center; text-align:left; cursor:pointer; color:var(--ink); transition:.2s ease; }
+.lotOption:hover,.lotOption.active { border-color:#6e9a89; transform:translateY(-1px); box-shadow:0 10px 28px rgba(15,45,36,.08); }
+.lotOption.active { background:#edf5f1; }
+.lotRank { width:29px; height:29px; display:grid; place-items:center; border-radius:9px; background:#edf0eb; font-size:11px; font-weight:900; }
+.lotOption.active .lotRank { background:var(--green); color:#fff; }
+.lotOption > span:nth-child(2) { display:grid; gap:3px; }
+.lotOption small { color:var(--muted); font-size:10px; }
+.lotSpaces { display:grid; justify-items:end; }
+.lotSpaces b { font-family:var(--font-serif),Georgia,serif; font-size:25px; font-weight:500; }
+.routeButton { width:100%; justify-content:space-between; margin-top:8px; }
+.mapSource { display:block; margin-top:14px; color:var(--muted); line-height:1.45; font-size:9px; }
+.routeToast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:80; width:min(560px,calc(100vw - 30px)); background:#102e26; color:#fff; border-radius:20px; padding:20px 48px 20px 20px; display:flex; gap:15px; box-shadow:0 28px 90px rgba(4,24,18,.42); animation:routeUp .35s ease both; }
+@keyframes routeUp { from { opacity:0; transform:translate(-50%,18px); } }
+.routeIcon { flex:none; width:42px; height:42px; display:grid; place-items:center; border-radius:13px; background:var(--orange); font-size:20px; }
+.routeToast h3 { margin:3px 0; font-family:var(--font-serif),Georgia,serif; font-size:25px; }
+.routeToast > div > small { color:#a9c5bb; font-size:9px; font-weight:800; letter-spacing:.12em; }
+.routeToast p { margin:0 0 10px; color:#c2d2cd; font-size:12px; }
+.routeToast dl { display:flex; gap:22px; margin:0 0 11px; }
+.routeToast dl div { display:grid; gap:2px; }
+.routeToast dt { color:#8daf9f; font-size:9px; text-transform:uppercase; }
+.routeToast dd { margin:0; font-size:11px; }
+.routeToast a { color:#f3c980; font-weight:800; font-size:12px; }
+.routeClose { position:absolute; right:14px; top:12px; border:0; background:none; color:#fff; font-size:23px; cursor:pointer; }
+
+@media (max-width: 900px) {
+  .mapHeader { grid-template-columns:1fr; gap:24px; }
+  .mapLegend { border-left:0; border-top:1px solid var(--line); padding:18px 0 0; }
+  .mapLayout { grid-template-columns:1fr; }
+  .liveMap { min-height:430px; }
+}
+@media (max-width: 600px) {
+  .mapSection { padding:70px 16px 80px; }
+  .mapHeader h2 { font-size:42px; }
+  .liveMap { min-height:380px; }
+  .mapBadge { left:10px; top:10px; }
+  .stateHallBadge { right:10px; bottom:10px; }
+  .lotSelector { padding:15px; }
+  .routeToast { bottom:12px; padding:17px 42px 17px 15px; }
+  .routeToast dl { flex-direction:column; gap:7px; }
+}
