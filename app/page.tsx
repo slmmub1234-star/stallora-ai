@@ -145,7 +145,7 @@ export default function Home() {
           <a href="#forecast">Forecast</a>
           <a href="#how">How it works</a>
           <a href="#pilot">Pilot evidence</a>
-          <a href="./admin/">Admin</a>
+          <a href="./admin">Admin</a>
         </nav>
         <div className="navActions">
           <button className="demoNavButton" onClick={() => { setDemoStep(0); setDemoActive(true); }}>Professor Demo</button>
